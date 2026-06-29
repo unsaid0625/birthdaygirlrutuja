@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Happy Birthday, Rutuja!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Montserrat:wght@200;400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --deep: #020818;
+    --navy: #051640;
+    --royal: #0a2a72;
+    --cerulean: #1565c0;
+    --sapphire: #1976d2;
+    --sky: #42a5f5;
+    --ice: #90caf9;
+    --pearl: #e3f2fd;
+    --gold: #ffd54f;
+    --white: #ffffff;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--deep);
+    -webkit-text-size-adjust: 100%;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  body.is-paused *, body.is-paused *::before, body.is-paused *::after {
+    animation-play-state: paused !important;
+    transition: none !important;
+  }
+
+  #stage, #startOverlay, .scene { height: 100vh; height: 100dvh; }
+
+  #starfield { position: fixed; inset: 0; z-index: 0; }
+
+  #stage {
+    position: fixed; inset: 0; z-index: 1;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+  }
+
+  audio { display: none; }
+
+  #startOverlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: var(--deep);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: opacity 1s ease;
+    padding: 24px;
+    text-align: center;
+  }
+  #startOverlay .pulse-ring {
+    width: 88px; height: 88px;
+    border-radius: 50%;
+    border: 2px solid var(--sky);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    animation: ringPulse 2s ease-in-out infinite;
+  }
+  #startOverlay .pulse-ring::before, #startOverlay .pulse-ring::after {
+    content: '';
+    position: absolute; inset: -14px;
+    border-radius: 50%;
+    border: 1px solid var(--sky);
+    opacity: 0;
+    animation: ripple 2s ease-out infinite;
+  }
+  #startOverlay .pulse-ring::after { animation-delay: 1s; }
+  #startOverlay svg { width: 36px; height: 36px; fill: var(--sky); }
+  #startOverlay p {
+    margin-top: 28px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 200; letter-spacing: 0.3em;
+    color: var(--ice); font-size: 12px; text-transform: uppercase;
+  }
+
+  @keyframes ringPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+  @keyframes ripple { 0%{transform:scale(1);opacity:0.6} 100%{transform:scale(1.55);opacity:0} }
+
+  .scene {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0 22px;
+  }
+  .scene.active { opacity: 1; pointer-events: auto; }
+  .scene.leaving { opacity: 0; pointer-events: none; transition: opacity 0.8s ease; }
+
+  .particles-wrap {
+    position: fixed; inset: 0; z-index: 2; pointer-events: none;
+    overflow: hidden;
+  }
+  .particle {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0;
+    animation: floatUp linear infinite;
+    will-change: transform, opacity;
+  }
+  @keyframes floatUp {
+    0%   { transform: translateY(0) scale(1); opacity: 0; }
+    10%  { opacity: 0.7; }
+    90%  { opacity: 0.5; }
+    100% { transform: translateY(-110vh) scale(0.4); opacity: 0; }
+  }
+
+  #sceneDots {
+    position: fixed; z-index: 50;
+    bottom: max(22px, env(safe-area-inset-bottom));
+    left: 0; right: 0;
+    display: flex; justify-content: center; gap: 8px;
+    pointer-events: none;
+  }
+  #sceneDots .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(144,202,249,0.2);
+    transition: background 0.4s ease, transform 0.4s ease;
+  }
+  #sceneDots .dot.on {
+    background: var(--gold);
+    transform: scale(1.4);
+    box-shadow: 0 0 8px rgba(255,213,79,0.5);
+  }
+
+  .anim-text {
+    opacity: 0;
+    --delay: 0s;
+  }
+  .scene.active .anim-text {
+    animation-name: cinematicIn, floatLoop;
+    animation-duration: 1.2s, 6s;
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1), ease-in-out;
+    animation-fill-mode: forwards, forwards;
+    animation-iteration-count: 1, infinite;
+    animation-delay: var(--delay), calc(var(--delay) + 1.2s);
+  }
+  .scene.leaving .anim-text {
+    animation-name: cinematicOut;
+    animation-duration: 0.6s;
+    animation-timing-function: cubic-bezier(0.4, 0, 1, 1);
+    animation-fill-mode: forwards;
+    animation-delay: 0s;
+  }
+
+  @keyframes cinematicIn {
+    0% { opacity: 0; transform: translateY(30px) scale(0.95); filter: blur(10px); }
+    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  }
+  @keyframes floatLoop {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  @keyframes cinematicOut {
+    0% { opacity: 1; transform: translateY(0); filter: blur(0); }
+    100% { opacity: 0; transform: translateY(-20px); filter: blur(8px); }
+  }
+
+  .divider-line {
+    width: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--sky), transparent);
+    margin: 20px auto;
+  }
+  .scene.active .divider-line { animation: expandLine 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards var(--delay); }
+  .scene.leaving .divider-line { animation: shrinkLine 0.5s ease forwards; }
+
+  @keyframes expandLine { to { width: 180px; } }
+  @keyframes shrinkLine { from { width: 180px; } to { width: 0; opacity: 0; } }
+
+  .hb-pretext {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 200; font-size: clamp(10px,2.4vw,14px);
+    letter-spacing: 0.4em; text-transform: uppercase;
+    color: var(--ice);
+  }
+  .wish-card { text-align: center; max-width: 90vw; }
+  .wish-icon { font-size: clamp(36px,8vw,52px); display: block; margin-bottom: 15px; }
+  .wish-heading {
+    font-family: 'Playfair Display', serif;
+    font-style: italic; font-weight: 400;
+    font-size: clamp(26px,7.5vw,48px);
+    color: var(--white); margin: 12px 0 16px;
+    text-shadow: 0 0 40px rgba(66,165,245,0.4); line-height: 1.2;
+  }
+  .wish-body {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300; font-size: clamp(15px,3.8vw,22px);
+    color: var(--pearl); line-height: 1.6;
+    max-width: 580px; margin: 0 auto;
+  }
+  .date-highlight {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700; font-size: clamp(36px,12vw,64px);
+    color: var(--gold); margin-bottom: 8px;
+    text-shadow: 0 0 40px rgba(255,213,79,0.6);
+  }
+
+  .elegant-title {
+    display: flex; flex-direction: column; align-items: center;
+    line-height: 1.1; margin: 20px 0;
+  }
+  .elegant-title .row1 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 400; font-style: italic;
+    font-size: clamp(32px, 9vw, 60px);
+    color: var(--white);
+  }
+  .elegant-title .row2 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: clamp(40px, 12vw, 85px);
+    color: var(--sky);
+    text-shadow: 0 0 40px rgba(66,165,245,0.5);
+  }
+  .elegant-title .row3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400; font-style: italic;
+    font-size: clamp(26px, 7.5vw, 55px);
+    color: var(--gold);
+    margin-top: 10px;
+    text-shadow: 0 0 30px rgba(255,213,79,0.5);
+  }
+
+  .heart-row {
+    margin-top: 20px; font-size: clamp(20px,5vw,28px);
+    letter-spacing: 12px;
+  }
+
+  #replayBtn {
+    margin-top: 30px;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 30px;
+    border: 1px solid var(--gold); border-radius: 100px;
+    background: rgba(255,213,79,0.08);
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400; font-size: 13px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--gold); cursor: pointer;
+    box-shadow: 0 0 25px rgba(255,213,79,0.15);
+    transition: all 0.3s ease;
+  }
+  #replayBtn:active { transform: scale(0.94); }
+  #replayBtn svg { width: 16px; height: 16px; fill: var(--gold); }
+
+  #progressBar {
+    position: fixed; bottom: 0; left: 0;
+    height: 3px; width: 0%;
+    background: linear-gradient(90deg, var(--royal), var(--sky), var(--gold));
+    z-index: 200; box-shadow: 0 0 12px var(--sky);
+    transition: width 0.3s linear;
+  }
+
+  #muteToggle {
+    position: fixed; top: max(16px, env(safe-area-inset-top));
+    right: max(16px, env(safe-area-inset-right));
+    z-index: 200;
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(144,202,249,0.35);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; backdrop-filter: blur(4px);
+  }
+  #muteToggle svg { width: 18px; height: 18px; fill: var(--ice); }
+
+  #aiChatWidget {
+    position: fixed;
+    bottom: max(60px, env(safe-area-inset-bottom));
+    right: max(20px, env(safe-area-inset-right));
+    z-index: 300;
+    display: flex; flex-direction: column; align-items: flex-end;
+  }
+  #chatToggle {
+    width: 46px; height: 46px; border-radius: 50%;
+    background: var(--sapphire); border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4), 0 0 15px rgba(25,118,210,0.5);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  #chatToggle:hover { transform: scale(1.1); }
+  #chatToggle svg { width: 22px; height: 22px; fill: var(--white); }
+
+  #chatPanel {
+    width: 280px; max-height: 350px;
+    background: rgba(5, 22, 64, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(144,202,249,0.3);
+    border-radius: 16px;
+    margin-bottom: 12px;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    transform-origin: bottom right;
+    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    opacity: 0; pointer-events: none; transform: scale(0.8);
+  }
+  #chatPanel.open { opacity: 1; pointer-events: auto; transform: scale(1); }
+
+  #chatHeader {
+    padding: 12px 16px; background: rgba(0,0,0,0.2);
+    font-family: 'Montserrat', sans-serif; font-size: 12px;
+    font-weight: 600; color: var(--sky); text-transform: uppercase; letter-spacing: 1px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  #chatBody {
+    flex: 1; overflow-y: auto; padding: 12px;
+    display: flex; flex-direction: column; gap: 8px;
+    font-family: 'Montserrat', sans-serif; font-size: 12px; line-height: 1.4;
+  }
+  .msg { padding: 8px 12px; border-radius: 12px; max-width: 85%; word-wrap: break-word; }
+  .msg.ai { background: rgba(25,118,210,0.3); color: var(--pearl); align-self: flex-start; border-bottom-left-radius: 2px; }
+  .msg.user { background: rgba(255,213,79,0.2); color: var(--gold); align-self: flex-end; border-bottom-right-radius: 2px; }
+
+  #chatInputWrap {
+    padding: 10px; border-top: 1px solid rgba(255,255,255,0.1);
+    display: flex; gap: 8px; background: rgba(0,0,0,0.2);
+  }
+  #chatInput {
+    flex: 1; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.2); border-radius: 20px;
+    padding: 8px 12px; color: var(--white); font-family: 'Montserrat', sans-serif; font-size: 12px;
+    outline: none;
+  }
+  #chatInput::placeholder { color: rgba(255,255,255,0.4); }
+  #chatSend {
+    background: transparent; border: none; color: var(--sky);
+    cursor: pointer; padding: 0 6px; display: flex; align-items: center; justify-content: center;
+  }
+  #chatSend svg { width: 18px; height: 18px; fill: currentColor; }
+
+  #confettiCanvas { position: fixed; inset: 0; z-index: 10; pointer-events: none; }
+
+  .orb {
+    position: fixed; border-radius: 50%;
+    pointer-events: none; z-index: 0;
+    filter: blur(70px); opacity: 0.16;
+    will-change: transform;
+  }
+  .orb1 { width: 60vw; height: 60vw; max-width: 420px; max-height: 420px; background: var(--cerulean); top: -10vw; left: -10vw; animation: orbDrift1 20s ease-in-out infinite; }
+  .orb2 { width: 50vw; height: 50vw; max-width: 360px; max-height: 360px; background: var(--royal); bottom: -8vw; right: -8vw; animation: orbDrift2 25s ease-in-out infinite; }
+  .orb3 { width: 40vw; height: 40vw; max-width: 280px; max-height: 280px; background: var(--sapphire); top: 42%; left: 50%; transform: translate(-50%,-50%); animation: orbDrift1 18s ease-in-out infinite reverse; }
+
+  @keyframes orbDrift1 { 0%,100%{transform:translate(0,0)} 33%{transform:translate(24px,18px)} 66%{transform:translate(-14px,30px)} }
+  @keyframes orbDrift2 { 0%,100%{transform:translate(0,0)} 33%{transform:translate(-18px,24px)} 66%{transform:translate(14px,-18px)} }
+
+  @media (prefers-reduced-motion: reduce) {
+    .orb, .particle, .anim-text, .divider-line { animation: none !important; filter: none !important; opacity: 1 !important; transform: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<audio id="bgm" src="https://res.cloudinary.com/da0yz9hl7/video/upload/v1782736447/Rutuja_s_Birthday_Song_okumqm.mp3" preload="auto"></audio>
+
+<div id="progressBar"></div>
+
+<div id="muteToggle" aria-label="Mute or unmute">
+  <svg id="muteIcon" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+</div>
+
+<div id="aiChatWidget">
+  <div id="chatPanel">
+    <div id="chatHeader">AI Assistant</div>
+    <div id="chatBody">
+      <div class="msg ai">Hello! I am here to celebrate Rutuja's special day. Feel free to chat!</div>
+    </div>
+    <div id="chatInputWrap">
+      <input type="text" id="chatInput" placeholder="Type a message..." autocomplete="off"/>
+      <button id="chatSend">
+        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+  <button id="chatToggle" aria-label="Open Chat">
+    <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+  </button>
+</div>
+
+<div id="sceneDots">
+  <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+  <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+  <span class="dot"></span>
+</div>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<canvas id="starfield"></canvas>
+<canvas id="confettiCanvas"></canvas>
+<div class="particles-wrap" id="particlesWrap"></div>
+
+<div id="startOverlay">
+  <div class="pulse-ring">
+    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+  </div>
+  <p>Tap to begin</p>
+</div>
+
+<div id="stage">
+
+  <div class="scene" id="scene1">
+    <span class="hb-pretext anim-text" style="--delay: 0.2s">✦ A special day ✦</span>
+    <div class="elegant-title">
+      <span class="row1 anim-text" style="--delay: 0.6s">Happy</span>
+      <span class="row2 anim-text" style="--delay: 1.0s">Birthday</span>
+      <span class="row3 anim-text" style="--delay: 1.4s">Ms. Rutuja Agwan</span>
+    </div>
+    <div class="divider-line" style="--delay: 1.8s"></div>
+    <div class="hb-pretext anim-text" style="--delay: 2.2s">Tap &amp; hold anywhere to pause</div>
+  </div>
+
+  <div class="scene" id="scene2">
+    <div class="wish-card">
+      <span class="wish-icon anim-text" style="--delay: 0.1s">🌿</span>
+      <div class="wish-heading anim-text" style="--delay: 0.4s">May this year bring profound growth and clarity</div>
+      <div class="wish-body anim-text" style="--delay: 0.8s">
+        Here's to embracing the journey, finding unshakeable peace in the process, and confidently stepping into your own power.
+      </div>
+    </div>
+  </div>
+
+  <div class="scene" id="scene3">
+    <div class="wish-card">
+      <span class="wish-icon anim-text" style="--delay: 0.1s">🦅</span>
+      <div class="wish-heading anim-text" style="--delay: 0.4s">May your resilience protect you</div>
+      <div class="wish-body anim-text" style="--delay: 0.8s">
+        Wishing you the strength to navigate life's complexities with grace, and the wisdom to trust the brilliant path you are creating.
+      </div>
+    </div>
+  </div>
+
+  <div class="scene" id="scene4">
+    <div class="wish-card">
+      <span class="wish-icon anim-text" style="--delay: 0.1s">✨</span>
+      <div class="wish-heading anim-text" style="--delay: 0.4s">May you find enduring joy and deep fulfillment</div>
+      <div class="wish-body anim-text" style="--delay: 0.8s">
+        Here's to a year where tranquility meets passion, where every day feels purposeful, and where you prioritize your own well-being.
+      </div>
+    </div>
+  </div>
+
+  <div class="scene" id="scene5">
+    <div class="wish-card">
+      <span class="wish-icon anim-text" style="--delay: 0.1s">🥂</span>
+      <div class="wish-heading anim-text" style="--delay: 0.4s">May your connections deepen and flourish</div>
+      <div class="wish-body anim-text" style="--delay: 0.8s">
+        Cheers to genuine moments, profound conversations, and the beautiful, shared journey ahead of you.
+      </div>
+    </div>
+  </div>
+
+  <div class="scene" id="scene6">
+    <div class="wish-card">
+      <div class="date-highlight anim-text" style="--delay: 0.2s">29/06/2026</div>
+      <div class="wish-heading anim-text" style="--delay: 0.6s">A Beautiful Milestone</div>
+      <div class="wish-body anim-text" style="--delay: 1.0s">
+        Today marks another chapter in your incredible story. May the pages ahead be written with love, success, and endless possibility.
+      </div>
+    </div>
+  </div>
+
+  <div class="scene" id="scene7">
+    <div class="wish-card">
+      <span class="wish-icon anim-text" style="--delay: 0.1s">🎂✨</span>
+      <div class="elegant-title">
+        <span class="row1 anim-text" style="--delay: 0.4s">Happy Birthday</span>
+        <span class="row3 anim-text" style="--delay: 0.8s">Rutuja</span>
+      </div>
+      <div class="wish-body anim-text" style="--delay: 1.2s; margin-top: 10px;">
+        Wishing you the absolute best, today and always.
+      </div>
+      <div class="heart-row anim-text" style="--delay: 1.6s">🎉 🌟 🎈</div>
+      <div class="anim-text" style="--delay: 2.0s">
+        <button id="replayBtn" type="button">
+          <svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.74 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+          Play again
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   DEVICE / PERF DETECTION
+══════════════════════════════════════ */
+const isSmall = window.innerWidth < 480;
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ══════════════════════════════════════
+   STARFIELD CANVAS
+══════════════════════════════════════ */
+(function initStarfield() {
+  const canvas = document.getElementById('starfield');
+  const ctx = canvas.getContext('2d');
+  let W, H, stars = [];
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function makeStars(count) {
+    stars = [];
+    for (let i = 0; i < count; i++) {
+      stars.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 1.4 + 0.2,
+        alpha: Math.random() * 0.7 + 0.1,
+        speed: Math.random() * 0.3 + 0.05,
+        twinkleSpeed: Math.random() * 0.02 + 0.005,
+        twinkleDir: Math.random() > 0.5 ? 1 : -1
+      });
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    stars.forEach(s => {
+      s.alpha += s.twinkleSpeed * s.twinkleDir;
+      if (s.alpha > 0.9 || s.alpha < 0.1) s.twinkleDir *= -1;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(144,202,249,${s.alpha})`;
+      ctx.fill();
+      s.y -= s.speed;
+      if (s.y < -2) { s.y = H + 2; s.x = Math.random() * W; }
+    });
+    requestAnimationFrame(draw);
+  }
+
+  resize();
+  makeStars(isSmall ? 120 : 200);
+  draw();
+  window.addEventListener('resize', () => { resize(); makeStars(isSmall ? 120 : 200); });
+})();
+
+/* ══════════════════════════════════════
+   FLOATING PARTICLES
+══════════════════════════════════════ */
+(function initParticles() {
+  if (reducedMotion) return;
+  const wrap = document.getElementById('particlesWrap');
+  const colors = ['#42a5f5','#90caf9','#ffd54f','#1976d2','#e3f2fd'];
+  const count = isSmall ? 18 : 30;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 5 + 2;
+    p.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random()*100}%;
+      bottom:${Math.random()*-20}%;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      animation-duration:${Math.random()*12+8}s;
+      animation-delay:${Math.random()*10}s;
+    `;
+    wrap.appendChild(p);
+  }
+})();
+
+/* ══════════════════════════════════════
+   CONFETTI
+══════════════════════════════════════ */
+const confettiCanvas = document.getElementById('confettiCanvas');
+const cctx = confettiCanvas.getContext('2d');
+let confettiPieces = [];
+let confettiActive = false;
+
+function resizeConfetti() {
+  confettiCanvas.width = window.innerWidth;
+  confettiCanvas.height = window.innerHeight;
+}
+resizeConfetti();
+window.addEventListener('resize', resizeConfetti);
+
+function launchConfetti() {
+  if (reducedMotion) return;
+  confettiPieces = [];
+  confettiActive = true;
+  const colors = ['#ffd54f','#42a5f5','#e3f2fd','#1976d2','#ffffff','#90caf9'];
+  for (let i = 0; i < (isSmall ? 80 : 140); i++) {
+    confettiPieces.push({
+      x: Math.random() * confettiCanvas.width,
+      y: -10 - Math.random() * 100,
+      w: Math.random() * 8 + 4,
+      h: Math.random() * 5 + 3,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rot: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.15,
+      vx: (Math.random() - 0.5) * 3,
+      vy: Math.random() * 3 + 1.5,
+      alpha: 1
+    });
+  }
+  animateConfetti();
+}
+
+function animateConfetti() {
+  if (!confettiActive) return;
+  cctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+  confettiPieces = confettiPieces.filter(p => p.alpha > 0.01);
+  if (confettiPieces.length === 0) { confettiActive = false; return; }
+  confettiPieces.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    p.rot += p.rotSpeed;
+    if (p.y > confettiCanvas.height * 0.7) p.alpha -= 0.02;
+    cctx.save();
+    cctx.globalAlpha = p.alpha;
+    cctx.translate(p.x, p.y);
+    cctx.rotate(p.rot);
+    cctx.fillStyle = p.color;
+    cctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+    cctx.restore();
+  });
+  requestAnimationFrame(animateConfetti);
+}
+
+/* ══════════════════════════════════════
+   SCENE MANAGER
+══════════════════════════════════════ */
+const SCENE_DURATION = 6000; // ms per scene
+const scenes = Array.from(document.querySelectorAll('.scene'));
+const dots = Array.from(document.querySelectorAll('#sceneDots .dot'));
+const progressBar = document.getElementById('progressBar');
+let currentScene = 0;
+let sceneTimer = null;
+let progressStart = null;
+let progressAnim = null;
+let started = false;
+
+function showScene(index) {
+  scenes.forEach((s, i) => {
+    s.classList.remove('active', 'leaving');
+    if (i === index) s.classList.add('active');
+  });
+  dots.forEach((d, i) => {
+    d.classList.toggle('on', i === index);
+  });
+  if (index === scenes.length - 1) launchConfetti();
+}
+
+function startProgress() {
+  cancelAnimationFrame(progressAnim);
+  progressStart = performance.now();
+  function step(now) {
+    const elapsed = now - progressStart;
+    const pct = Math.min((elapsed / SCENE_DURATION) * 100, 100);
+    const globalPct = ((currentScene / (scenes.length - 1)) * 100) + (pct / (scenes.length - 1));
+    progressBar.style.width = globalPct + '%';
+    if (pct < 100) progressAnim = requestAnimationFrame(step);
+  }
+  progressAnim = requestAnimationFrame(step);
+}
+
+function nextScene() {
+  if (currentScene < scenes.length - 1) {
+    const prev = scenes[currentScene];
+    prev.classList.add('leaving');
+    setTimeout(() => prev.classList.remove('leaving'), 800);
+    currentScene++;
+    showScene(currentScene);
+    scheduleNext();
+    startProgress();
+  }
+}
+
+function scheduleNext() {
+  clearTimeout(sceneTimer);
+  if (currentScene < scenes.length - 1) {
+    sceneTimer = setTimeout(nextScene, SCENE_DURATION);
+  }
+}
+
+function startShow() {
+  started = true;
+  showScene(0);
+  scheduleNext();
+  startProgress();
+  playAudio();
+}
+
+function resetShow() {
+  currentScene = 0;
+  clearTimeout(sceneTimer);
+  cancelAnimationFrame(progressAnim);
+  progressBar.style.width = '0%';
+  scenes.forEach(s => s.classList.remove('active', 'leaving'));
+  showScene(0);
+  scheduleNext();
+  startProgress();
+  const audio = document.getElementById('bgm');
+  audio.currentTime = 0;
+  if (!isMuted) audio.play().catch(() => {});
+}
+
+/* ══════════════════════════════════════
+   START OVERLAY
+══════════════════════════════════════ */
+const startOverlay = document.getElementById('startOverlay');
+startOverlay.addEventListener('click', () => {
+  if (started) return;
+  startOverlay.style.opacity = '0';
+  startOverlay.style.pointerEvents = 'none';
+  setTimeout(() => { startOverlay.style.display = 'none'; }, 1000);
+  startShow();
+});
+
+/* ══════════════════════════════════════
+   AUDIO / MUTE
+══════════════════════════════════════ */
+let isMuted = false;
+const audio = document.getElementById('bgm');
+const muteToggle = document.getElementById('muteToggle');
+const muteIcon = document.getElementById('muteIcon');
+
+const soundOnPath = 'M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z';
+const soundOffPath = 'M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z';
+
+function playAudio() {
+  audio.loop = true;
+  audio.volume = 0.5;
+  audio.play().catch(() => {});
+}
+
+muteToggle.addEventListener('click', () => {
+  isMuted = !isMuted;
+  audio.muted = isMuted;
+  muteIcon.querySelector('path') && (muteIcon.querySelector('path').setAttribute('d', isMuted ? soundOffPath : soundOnPath));
+});
+
+/* ══════════════════════════════════════
+   HOLD TO PAUSE
+══════════════════════════════════════ */
+let holdTimer = null;
+document.addEventListener('pointerdown', () => {
+  holdTimer = setTimeout(() => {
+    document.body.classList.add('is-paused');
+    clearTimeout(sceneTimer);
+    cancelAnimationFrame(progressAnim);
+    audio.pause();
+  }, 300);
+});
+document.addEventListener('pointerup', () => {
+  clearTimeout(holdTimer);
+  if (document.body.classList.contains('is-paused')) {
+    document.body.classList.remove('is-paused');
+    if (started && !isMuted) audio.play().catch(() => {});
+    scheduleNext();
+    startProgress();
+  }
+});
+
+/* ══════════════════════════════════════
+   REPLAY BUTTON
+══════════════════════════════════════ */
+document.getElementById('replayBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  resetShow();
+});
+
+/* ══════════════════════════════════════
+   AI CHAT WIDGET
+══════════════════════════════════════ */
+const chatToggle = document.getElementById('chatToggle');
+const chatPanel = document.getElementById('chatPanel');
+const chatBody = document.getElementById('chatBody');
+const chatInput = document.getElementById('chatInput');
+const chatSend = document.getElementById('chatSend');
+
+chatToggle.addEventListener('click', (e) => {
+  e.stopPropagation();
+  chatPanel.classList.toggle('open');
+  if (chatPanel.classList.contains('open')) chatInput.focus();
+});
+
+async function sendChatMessage() {
+  const text = chatInput.value.trim();
+  if (!text) return;
+  chatInput.value = '';
+
+  const userMsg = document.createElement('div');
+  userMsg.className = 'msg user';
+  userMsg.textContent = text;
+  chatBody.appendChild(userMsg);
+  chatBody.scrollTop = chatBody.scrollHeight;
+
+  const thinkingMsg = document.createElement('div');
+  thinkingMsg.className = 'msg ai';
+  thinkingMsg.textContent = '...';
+  chatBody.appendChild(thinkingMsg);
+  chatBody.scrollTop = chatBody.scrollHeight;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: "You are a warm, celebratory AI assistant at a birthday experience for Rutuja Agwan. Today is her birthday (June 29, 2026). Be cheerful, kind, and keep responses concise (2-3 sentences max). Celebrate her day!",
+        messages: [{ role: 'user', content: text }]
+      })
+    });
+    const data = await response.json();
+    const reply = data.content?.map(b => b.text || '').join('') || 'Happy Birthday, Rutuja! 🎉';
+    thinkingMsg.textContent = reply;
+  } catch (err) {
+    thinkingMsg.textContent = 'Happy Birthday, Rutuja! 🎉 Wishing you a wonderful day!';
+  }
+  chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+chatSend.addEventListener('click', (e) => { e.stopPropagation(); sendChatMessage(); });
+chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.stopPropagation(); sendChatMessage(); } });
+</script>
+</body>
+</html>
